@@ -1,0 +1,37 @@
+name: Build upstream VIctory for Windows
+on:
+  workflow_dispatch:
+  push:
+    paths: ['.github/workflows/victory-windows.yml']
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: windows-2022
+    timeout-minutes: 40
+    steps:
+      - name: Check out the tested upstream revision
+        uses: actions/checkout@v4
+        with:
+          repository: Marvisak/VIctory
+          ref: 70564ae08c82d43df5fad97b08d34628b07b1d9d
+          persist-credentials: false
+      - name: Build the Windows x64 runtime
+        run: cargo build --release --locked -p victory
+      - name: Launch the compiled CLI
+        run: .\target\release\victory.exe --help
+      - name: Test upstream file format handling without game data
+        run: cargo test --release --locked -p victory-formats --lib
+      - name: Package the runtime with matching sources and upstream instructions
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path dist | Out-Null
+          Copy-Item target/release/victory.exe, LICENSE, README.md, victory.example.toml dist
+          git archive --format=zip --prefix=VIctory/ --output=dist/VIctory-source.zip HEAD
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          (Get-FileHash dist/victory.exe -Algorithm SHA256).Hash + '  victory.exe' | Set-Content dist/SHA256.txt -Encoding ascii
+      - uses: actions/upload-artifact@v4
+        with:
+          name: VIctory-Windows-x64-70564ae
+          path: dist/
+          if-no-files-found: error
