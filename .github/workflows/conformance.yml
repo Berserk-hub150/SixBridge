@@ -1,0 +1,25 @@
+name: Windows rendering probe
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  d3d12:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test the reference and build the probe
+        shell: pwsh
+        run: |
+          cargo test --locked
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          cargo build --release --locked
+      - name: Run compute shaders on Direct3D 12 software adapter
+        run: .\target\release\sixbridge.exe --software
+      - name: Save executable and readback frames
+        uses: actions/upload-artifact@v4
+        with:
+          name: SixBridge-Windows-x64
+          path: |
+            target/release/sixbridge.exe
+            output/*.png
+          if-no-files-found: error

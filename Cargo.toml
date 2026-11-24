@@ -1,0 +1,12 @@
+[package]
+name = "sixbridge"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "GPU conformance probe for final-value unsigned 64-bit image max reductions"
+
+[dependencies]
+bytemuck = { version = "1", features = ["derive"] }
+png = "0.17"
+pollster = "0.4"
+wgpu = "24.0.5"
